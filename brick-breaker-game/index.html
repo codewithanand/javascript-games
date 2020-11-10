@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+    <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+
+    <style>
+        body{
+            margin: 0;
+            background-color: black;   
+        }
+        canvas{
+            border: 2px solid red;
+        }
+        .coord{
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="text-white text-sm ml-2 mt-1 select-none">
+        <span>Score: </span><span id="score">0</span>
+    </div>
+    <div id="resetScreen" class="fixed inset-0 flex items-center ml-20 select-none">
+        <div class="bg-white max-w-md w-full p-6 text-center">
+            <h1 class="text-4xl font-bold" id="bigScore">0</h1>
+            <p class="text-sm text-gray-700 mb-4">Points</p>
+            <div>
+                <button id="startBtn" class="bg-blue-500 text-white w-full py-3 rounded-full font-bold">Start Game</button>
+            </div>
+        </div>
+    </div>
+    
+
+    <canvas></canvas>
+
+    <div class="text-white text-center text-sm ml-2 mt-1 select-none"  id="inst">
+        <p><span>Press 'SPACE' to SHOOT</span></p>
+    </div>
+
+    <script>
+        const canvas = document.querySelector('canvas');
+        const c = canvas.getContext('2d');
+
+        canvas.width = 800;
+        canvas.height = 600;
+
+        let resetScreen = document.querySelector('#resetScreen');
+        let startBtn = document.querySelector('#startBtn');
+        let inst = document.querySelector('#inst');
+        var scoreEl = document.querySelector('#score');
+        var bigScore = document.querySelector('#bigScore');
+
+        var colorArray = [
+            '#3726A6',
+            '#4A44F2',
+            '#F2E635',
+            '#F2BE22',
+            '#F20505',
+            '#6BB251',
+            '#40A819',
+            '#FF00E2',
+            '#F299A9',
+            '#097368',
+            '#F2B807',
+            '#F2CFBB',
+            '#D94F30'
+        ];
+
+        class Player{
+            constructor(x, y, length, width){
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.length = length;
+                this.color = '#F2BE22';
+                
+            }
+            draw(){
+                c.beginPath();
+                c.fillStyle = this.color;
+                c.fillRect(this.x, this.y, this.length, this.width);
+            }
+            update(){
+                if(this.x<0){
+                    this.x = 0;
+                }else if(this.x+this.length>canvas.width){
+                    this.x = canvas.width-this.length;
+                }
+                this.draw();
+            }
+        }
+
+        class Ball{
+            constructor(x, y, color, radius, velocity){
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = radius;
+                this.velocity = velocity;
+            }
+            draw(){
+                c.beginPath();
+                c.fillStyle = this.color;
+                c.arc(this.x, this.y, this.radius, 0, Math.PI*2, false);
+                c.fill();
+            }
+            update(){
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.draw();
+            }
+        }
+
+        class Bricks{
+            constructor(x, y, length, width){
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.length = length;
+                this.color = colorArray[Math.floor(Math.random()*colorArray.length)];;
+            }
+            draw(){
+                c.beginPath();
+                c.fillStyle = this.color;
+                c.strokeStyle = 'white';
+                c.fillRect(this.x, this.y, this.length, this.width);
+                c.strokeRect(this.x, this.y, this.length, this.width);
+                c.stroke();
+            }
+            update(){
+                if(this.x<0){
+                    this.x = 0;
+                }else if(this.x+this.length>canvas.width){
+                    this.x = canvas.width-this.length;
+                }
+                this.draw();
+            }
+        }
+
+        class Particle{
+            constructor(x, y, color, radius, velocity){
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = radius;
+                this.velocity = velocity;
+                this.alpha = 1;
+            }
+            draw(){
+                c.save()
+                c.globalAlpha = this.alpha;
+                c.beginPath();
+                c.arc(this.x, this.y, this.radius, 0, Math.PI*2, false);
+                c.fillStyle = this.color;
+                c.fill();
+                c.restore();
+            }
+            update(){
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.draw();
+                this.alpha -= 0.01;
+            }
+        }
+
+
+        var paddleLength = 120;
+        var paddleWidth = 20;
+
+        var x = canvas.width/2 - paddleLength/2;
+        const y = canvas.height- paddleWidth -20;
+
+        var player = new Player(x, y, paddleLength, paddleWidth);
+        
+        var ball = new Ball(x+player.length/2, y-8, 'rgb(255, 0, 0)', 8, {x:0, y:0}); 
+
+        var bricks = [];
+        var particles = [];
+        var bricksLength;
+        var score = 0;
+        bigScore.innerHTML=score;
+
+        function init(){
+            player = new Player(x, y, paddleLength, paddleWidth);
+            ball = new Ball(x+player.length/2, y-8, 'rgb(255, 0, 0)', 8, {x:0, y:0}); 
+            bricks = [];
+            particles = [];
+            bricksLength;
+            score = 0;
+            bigScore.innerHTML=score;
+            resetScreen.style.display = 'none'; 
+            inst.style.display = 'flex';
+        }
+
+        function spawnBricks(){
+            let x=0;
+            let y=0;
+            let length=80;
+            let width=20;
+            for(var i=0; i<10; i++){ 
+                for(var j=0; j<8; j++){
+                    bricks.push(new Bricks(x+i*length,y+j*width,length,width));
+                }
+            }
+            bricksLength = bricks.length;
+        }
+
+        let animationId;
+        function animate(){
+            animationId = requestAnimationFrame(animate);
+            c.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            c.clearRect(0, 0, canvas.width, canvas.height);
+            
+            player.update();
+            
+
+            particles.forEach((particle,index)=>{
+                if(particle.alpha<=0){
+                    particles.splice(index,1);
+                }else{
+                    particle.update();
+                }
+            });
+
+            
+
+            //when ball hits left top and right boundary
+            if(ball.x-ball.radius<0 || ball.x+ball.radius>canvas.width){
+                    ball.velocity.x = -ball.velocity.x;
+                }
+            if(ball.y-ball.radius<0){
+                ball.velocity.y = -ball.velocity.y;
+            }
+
+            //when ball hits player
+            if((ball.y+ball.radius>player.y)&&(ball.x>=player.x && ball.x<=player.x+player.length)){
+                let paddleAngle = Math.atan2((ball.y-(player.y+player.width/2)),(ball.x-(player.x+player.length/2))); 
+                //ball.velocity.y = -ball.velocity.y;
+                ball.velocity.x = Math.cos(paddleAngle)*2;
+                ball.velocity.y = -(ball.velocity.y*0.9) + paddleAngle;
+            }
+
+            bricks.forEach((brick, index)=>{
+                brick.update();
+
+                //set Game Over
+                if((ball.y>player.y) && !(ball.x>=player.x && ball.x<=player.x+player.length)){
+                    cancelAnimationFrame(animationId);
+                    bigScore.innerHTML = score;
+                    resetScreen.style.display = 'flex'; 
+                    inst.style.display = 'none';
+                }
+
+                //when ball hits bricks
+                if((ball.x+ball.radius>=brick.x && ball.x+ball.radius<=brick.x+brick.length)&&((ball.y+ball.radius>=brick.y && ball.y<=brick.y+brick.width)||(ball.y>=brick.y+brick.width && ball.y<=brick.y+brick.width))){
+
+                    bricksLength-=1;
+                    score+=100;
+                    scoreEl.innerHTML = score;
+
+                    //creates eplosion
+                    for(var i=0; i<10; i++){
+                        particles.push(new Particle(ball.x, ball.y, brick.color, Math.random()*3, {
+                            x: (Math.random()-0.5) * (Math.random()*6), 
+                            y: (Math.random()-0.5) * (Math.random()*6)
+                        }));
+                    } 
+
+                    setTimeout(()=>{
+                        bricks.splice(index, 1);
+                        
+                    },0);
+
+                    let brickAngle = Math.sin(Math.atan2((ball.y-(brick.y+brick.width/2)),(ball.x-(brick.x+brick.length/2))));
+                    ball.velocity.y =  -(ball.velocity.y*0.9) + brickAngle ;
+
+                    
+                }
+                
+            });
+
+            //set Game over
+            if(bricksLength===0){
+                    cancelAnimationFrame(animationId);
+                    bigScore.innerHTML = score;
+                    resetScreen.style.display = 'flex';
+                    inst.style.display = 'none';
+            }
+
+            ball.update();  
+        }
+
+        window.addEventListener('mousemove', function(event){
+            player.x = event.x - player.length/2;
+        });
+        
+        function ballPush(event){
+              
+            if(event.keyCode === 32){
+                inst.style.display = 'none';
+                let paddleAngle = Math.atan2((ball.y-(player.y+player.width/2)),(ball.x-(player.x+player.length/2))); 
+                //ball.velocity.y = -ball.velocity.y;
+                ball.velocity.x = Math.cos(paddleAngle) + 4;
+                ball.velocity.y = -ball.velocity.y + Math.sin(paddleAngle) + 4; 
+                window.removeEventListener('keydown', ballPush);
+            }
+            
+            
+        }
+        window.addEventListener('keydown', ballPush);
+        startBtn.addEventListener('click', ()=>{
+            init();
+            animate();
+            spawnBricks();
+            window.addEventListener('keydown', ballPush);
+        });
+
+        
+
+
+        
+    </script>
+</body>
+</html>

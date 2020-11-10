@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collision Detection</title>
+    <style>
+        body{
+            margin: 0;
+            
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+
+    <script>
+        let canvas = document.querySelector('canvas');
+        let c = canvas.getContext('2d');
+
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
+
+        class Ball{
+            constructor(x, y, color, radius, velocity){
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = radius;
+                this.velocity = velocity;
+            }
+            draw(){
+                c.beginPath();
+                c.arc(this.x, this.y, this.radius, 0, Math.PI*2, false);
+                c.strokeStyle = this.color;
+                c.stroke();
+            }
+            update(){
+                this.x += this.velocity.x; 
+                this.y += this.velocity.y; 
+
+                this.draw();
+            }
+        }
+
+        class Box{
+            constructor(x, y, color, width, height, velocity){
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.width = width;
+                this.height = height;
+                this.velocity = velocity;
+                
+            }
+            draw(){
+                c.beginPath();
+                c.strokeRect(this.x, this.y, this.width, this.height);
+                c.strokeStyle = this.color;
+                c.stroke();
+            }
+            update(){
+                this.x += this.velocity.x; 
+                this.y += this.velocity.y; 
+
+                this.draw();
+            }
+        }
+
+        
+        let ballx = canvas.width/2;
+        let bally = canvas.height/2;
+        let ballcolor = 'red';
+        let ballradius = 20;
+
+        let ball = new Ball(ballx, bally, ballcolor, ballradius, {
+                    x : Math.random() * 3 + 3,
+                    y : Math.random() * 3 + 3
+                });
+        
+        let boxWidth = 90;
+        let boxHeight = 40
+        let boxX = canvas.width/2 - boxWidth/2 + 100;
+        let boxY = canvas.height/2 - boxHeight/2;
+        let boxColor = 'blue';
+        
+
+        let box = new Box(boxX, boxY, boxColor, boxWidth, boxHeight, {
+                    x : Math.random() * 3 + 3,
+                    y : Math.random() * 3 + 3
+                });
+        
+        let img = new Image();
+        img.src = 'red.png';
+
+        function animate(){
+            requestAnimationFrame(animate);
+            c.clearRect(0,0, canvas.width, canvas.height);
+
+            var pat = c.createPattern(img, 'repeat');
+            c.fillRect(300, 300, 100, 50);
+            c.fillStyle = pat;
+            c.fill();
+
+            c.drawImage(img, 200, 200, 48, 48);
+
+            ball.update();
+            box.update();
+
+            //restricting boundaries
+            if(ball.x+ball.radius>canvas.width || ball.x-ball.radius<0){
+                ball.velocity.x = -ball.velocity.x;
+            }
+            if(ball.y+ball.radius>canvas.height || ball.y-ball.radius<0){
+                ball.velocity.y = -ball.velocity.y;
+            }
+            if(box.x+box.width>canvas.width || box.x<0){
+                box.velocity.x = -box.velocity.x;
+            }
+            if(box.y+box.height>canvas.height || box.y<0){
+                box.velocity.y = -box.velocity.y;
+            }
+
+            //collision
+            if((ball.x+ball.radius>=box.x && ball.x+ball.radius<=box.x+box.width)&&((ball.y>=box.y && ball.y<=box.y+box.height)||(ball.y>=box.y+box.height && ball.y<=box.y+box.height))){
+
+                ball.velocity.x = -ball.velocity.x + Math.random();
+                ball.velocity.y = -ball.velocity.y +  Math.random();
+
+                box.velocity.x = -box.velocity.x +  Math.random();
+                box.velocity.y = -box.velocity.y +  Math.random();
+            }
+        }
+
+        animate();
+        spawnBalls();
+
+    </script>
+</body>
+</html>
