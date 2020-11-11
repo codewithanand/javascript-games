@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mario Running</title>
+    <style>
+        body{
+            margin: 0;
+        }
+        canvas{
+            background-color: aquamarine;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+
+
+    <script>
+        let canvas = document.querySelector('canvas');
+        let c = canvas.getContext('2d');
+
+        canvas.width = 600;
+        canvas.height = 300;
+
+
+        //image variables
+        let mario = new Image();
+
+        //setting variables
+        let ground = canvas.height - 30;
+        let step = 5;
+        let count = 1;
+        var map = {
+            32: false,
+            37: false,
+            39: false
+        }
+        let gravity = 1.5;
+        let jumpPower = 20;
+
+        //loading images
+        let superMario = [
+            './super-mario/images/mario/lg-1.png',
+            './super-mario/images/mario/lg-2.png',
+            './super-mario/images/mario/lg-3.png',
+            './super-mario/images/mario/lg-4.png',
+            './super-mario/images/mario/lg-1-l.png',
+            './super-mario/images/mario/lg-2-l.png',
+            './super-mario/images/mario/lg-3-l.png',
+            './super-mario/images/mario/lg-4-l.png'
+        ];
+
+        //classes
+        class Mario{
+            constructor(img, x, y){
+                this.x = x;
+                this.y = y;
+                this.img = img;
+                this.velocity = {
+                    x: 0,
+                    y: 0
+                }
+                this.feet = this.y + mario.height;
+                this.dir = 'right';
+
+            }
+            draw(){
+                c.drawImage(this.img, this.x, this.y);
+            }
+            update(){
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.draw();
+            }
+        }
+        let x = canvas.width/2;
+        let y = ground - 32;
+        mario.src = superMario[0]
+
+        let player = new Mario(mario, x, y);
+
+        //methods
+
+        function marioRun(){
+            onkeydown = function(e){
+                map[e.keyCode] = true;
+                if(map[32]){
+                    player.velocity.y -= jumpPower;
+                    console.log(e.keyCode + 'is pressed');
+                }
+                if(map[39]){
+                        if(count%2===0){
+                            mario.src = superMario[1];
+                        }
+                        if(count%3===0){
+                            mario.src = superMario[2];
+                        }
+                        if(count%4===0){
+                            mario.src = superMario[3];
+                        }
+                        player.x += step;
+                        count++;
+                        player.dir = 'right';
+                        console.log(e.keyCode + 'is pressed');
+                }
+                if(map[37]){
+                        if(count%2===0){
+                            mario.src = superMario[5];
+                        }
+                        if(count%3===0){
+                            mario.src = superMario[6];
+                        }
+                        if(count%4===0){
+                            mario.src = superMario[7];
+                        }
+                        player.x -= step;
+                        count++;
+                        player.dir = 'left';
+                        console.log(e.keyCode + 'is pressed');
+                }
+            }
+            onkeyup = function(e){
+                map[e.keyCode] = false;
+                if(player.dir==='left'){
+                    mario.src = superMario[4];
+                }if(player.dir==='right'){
+                    mario.src = superMario[0];
+                }
+                console.log(e.keyCode + 'is released');
+            }
+            
+        }
+
+        function scene(){
+            requestAnimationFrame(scene);
+            c.clearRect(0,0, canvas.width, canvas.height);
+            player.update();
+            marioRun();
+
+            if(player.y + mario.height > ground){
+                player.velocity.y = 0;
+            }
+            if(player.y+mario.height<ground){
+                player.velocity.y += gravity;
+            }
+        }
+        //window.addEventListener('keydown', marioRun);
+        scene();
+
+    </script>
+</body>
+</html>

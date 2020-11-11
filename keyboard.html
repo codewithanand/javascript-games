@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyBoard Events</title>
+    <style>
+        body{
+            margin: 0;
+        }
+        canvas{
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+
+    <script>
+        let canvas = document.querySelector('canvas');
+        let c = canvas.getContext('2d');
+
+        canvas.width = 900;
+        canvas.height = 500;
+
+        class Rectangle{
+            constructor(x,y, width, height){
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.velocity = {
+                    x: 0,
+                    y: 0
+                }
+            }
+            draw(){
+                c.beginPath();
+                c.fillStyle = 'red';
+                c.fillRect(this.x, this.y, this.width, this.height);
+                c.fill();
+            }
+            update(){
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.draw();
+            }
+        }
+
+        let gravity = 1.5;
+        let antigravity = 25;
+        let xGravity = 1.5;
+        let ground = canvas.height-50;
+
+        let width = 20;
+        let height = 20
+        let x = canvas.width/2 - width/2;
+        let y = ground - height;
+
+        var map = {32:false, 37:false, 39:false};
+
+
+        let object = new Rectangle(x, y, width, height);
+
+        function animate(){
+            requestAnimationFrame(animate);
+            c.clearRect(0,0, canvas.width, canvas.height);
+            object.update();
+            keyboardControl();
+
+            if(object.y+object.height>ground){
+                object.y = ground - object.height;
+                object.velocity.y = 0;
+            }
+            if(object.y+object.height<ground){
+                    object.velocity.y += gravity;
+            }
+            // if(object.velocity.y===0){
+            //     onkeydown = function(e){
+            //             if(e.keyCode===32){
+            //             object.velocity.y -=antigravity;
+            //             }
+            //     }
+            // }
+        }
+        animate();
+
+        // window.addEventListener('keydown',(event)=>{
+        //     if(event.keyCode === 37){
+        //         object.x -= 5;
+        //     }
+        //     if(event.keyCode === 39){
+        //         object.x += 5;
+        //     }
+        // });
+
+        function keyboardControl(){
+            onkeydown = function(e){
+                if(e.keyCode in map){
+                    map[e.keyCode] = true;
+                    if(map[32]){
+                        if(object.velocity.y===0){
+                            object.velocity.y -=antigravity;
+                        }
+                    }
+                    if(map[37] && map[32]){
+                        if(object.velocity.y===0){
+                            object.velocity.x -= 5;
+                            object.velocity.y -=antigravity;
+                        }
+                    }
+                    if(map[37]){
+                        object.velocity.x -= xGravity;
+                    }
+                    if(map[39]){
+                        object.velocity.x += xGravity;
+                    }
+                }
+            }
+            onkeyup = function(e){
+                if(e.keyCode in map){
+                    map[e.keyCode] = false;
+                    object.velocity.x = 0;
+                }
+            }
+        }
+        
+        
+    </script>
+</body>
+</html>
